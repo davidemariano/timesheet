@@ -1,0 +1,33 @@
+# ---- Node common ----
+**/node_modules/
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+**/.pnpm-debug.log*
+
+# ---- Build outputs ----
+**/dist/
+**/build/
+**/.angular/
+**/.cache/
+**/.tmp/
+**/coverage/
+
+# ---- Env & secrets ----
+.env
+**/.env
+.env.*
+*.local
+
+# ---- IDE / OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---- Docker (volumi/cartelle locali) ----
+docker-data/
+**/mongo-data/
+**/data/
+*.pid

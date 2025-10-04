@@ -1,0 +1,82 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: timesheet-mongo
+    env_file: .env
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo/init.js:/docker-entrypoint-initdb.d/init.js:ro
+    profiles: ["dev","prod"]
+
+  mongo-express:
+    image: mongo-express:1
+    container_name: timesheet-mongo-express
+    env_file: .env
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongo
+    profiles: ["dev"]
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+      target: dev
+    container_name: timesheet-api
+    env_file: .env
+    ports:
+      - "${API_PORT:-3000}:3000"
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    depends_on:
+      - mongo
+    profiles: ["dev"]
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      target: dev
+    container_name: timesheet-web
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    profiles: ["dev"]
+
+  api-prod:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+      target: prod
+    container_name: timesheet-api-prod
+    env_file: .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+    profiles: ["prod"]
+
+  web-prod:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      target: prod
+    container_name: timesheet-web-prod
+    ports:
+      - "8080:80"
+    depends_on:
+      - api-prod
+    profiles: ["prod"]
+
+volumes:
+  mongo_data:

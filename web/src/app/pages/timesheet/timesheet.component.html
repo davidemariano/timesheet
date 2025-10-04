@@ -1,0 +1,18 @@
+<section class="page">
+    <h1>Timesheet</h1>
+
+    <group-filters
+    [group1]="group1$ | async"
+    [group2]="group2$ | async"
+    (group1Change)="setGroup1($event)"
+    (group2Change)="setGroup2($event)"
+    />
+
+    <ng-container *ngIf="vm$ | async as vm; else loading">
+    <ui-table [columns]="vm.columns" [headers]="vm.headers" [rows]="vm.rows" />
+    </ng-container>
+
+    <ng-template #loading>
+    <p>Caricamento…</p>
+    </ng-template>
+</section>

@@ -1,0 +1,16 @@
+ <div class="table-wrapper">
+    <table>
+    <thead>
+        <tr>
+        <th *ngFor="let c of columns; trackBy: trackByIndex">{{ headers[c] ?? c }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let r of rows; trackBy: trackByRow">
+        <td *ngFor="let c of columns; trackBy: trackByIndex">
+            {{ r[c] }}
+        </td>
+        </tr>
+    </tbody>
+    </table>
+</div>
