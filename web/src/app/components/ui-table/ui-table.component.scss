@@ -1,21 +1,10 @@
-.table-wrapper { 
-    overflow: auto; 
+.table-responsive {
+  max-height: 65vh;
 }
 
-table { 
-    width: 100%;
-    border-collapse: collapse;
+thead th {
+  position: sticky;
+  top: 0;
+  background-color: var(--bs-body-bg);
+  z-index: 1;
 }
-    
-th, td { 
-    padding: 0.5rem 0.75rem; 
-    border-bottom: 1px solid #e5e7eb; 
-    text-align: left; 
-}
-
-thead th { 
-        position: sticky; 
-        top: 0; 
-        background: #fafafa; 
-        border-bottom: 2px solid #d1d5db; 
-    }

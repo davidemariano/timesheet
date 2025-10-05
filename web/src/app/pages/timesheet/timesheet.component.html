@@ -1,18 +1,33 @@
-<section class="page">
-    <h1>Timesheet</h1>
+<header class="page-header mb-2 container-fluid p-3 bg-light border-bottom">
+  <nav class="navbar navbar-light">
+    <span class="navbar-brand mb-0 h1 text-dark">Timesheet</span>
+  </nav>
+</header>
+<section class="page container py-4">
+  <div class="card mb-4">
+    <div class="card-body">
+      <group-filters
+        class="w-100"
+        [group1]="group1$ | async"
+        [group2]="group2$ | async"
+        (group1Change)="setGroup1($event)"
+        (group2Change)="setGroup2($event)"
+      />
+    </div>
+  </div>
 
-    <group-filters
-    [group1]="group1$ | async"
-    [group2]="group2$ | async"
-    (group1Change)="setGroup1($event)"
-    (group2Change)="setGroup2($event)"
-    />
+  <ng-container *ngIf="vm$ | async as vm; else loading">
+    <div class="card">
+      <div class="card-body p-0">
+        <ui-table [columns]="vm.columns" [headers]="vm.headers" [rows]="vm.rows" />
+      </div>
+    </div>
+  </ng-container>
 
-    <ng-container *ngIf="vm$ | async as vm; else loading">
-    <ui-table [columns]="vm.columns" [headers]="vm.headers" [rows]="vm.rows" />
-    </ng-container>
-
-    <ng-template #loading>
-    <p>Caricamento…</p>
-    </ng-template>
+  <ng-template #loading>
+    <div class="d-flex align-items-center gap-2 text-muted">
+      <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+      <span>Caricamento…</span>
+    </div>
+  </ng-template>
 </section>

@@ -1,22 +1,37 @@
 
-<form class="filters" (submit)="$event.preventDefault()">
-    <label>
-    Primo raggruppamento
-    <select [ngModel]="group1" (ngModelChange)="onChangeGroup1($event)" name="g1">
-        <option [ngValue]="null">(nessuno)</option>
-        <option *ngFor="let g of keys" [ngValue]="g">{{ labels[g] }}</option>
+<form class="filters row g-3 align-items-end" (submit)="$event.preventDefault()">
+  <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+    <label class="form-label" for="group1Select">Raggruppa per</label>
+    <select
+      class="form-select"
+      id="group1Select"
+      [ngModel]="group1"
+      (ngModelChange)="onChangeGroup1($event)"
+      name="g1"
+    >
+      <option [ngValue]="null">(nessuno)</option>
+      <option *ngFor="let g of keys" [ngValue]="g">{{ labels[g] }}</option>
     </select>
-    </label>
+  </div>
 
-    <label>
-    Secondo raggruppamento
-    <select [disabled]="!group1" [ngModel]="group2" (ngModelChange)="onChangeGroup2($event)" name="g2">
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3"  *ngIf="group1">
+      <label class="form-label" for="group2Select">Sottoraggruppa per</label>
+      <select
+        class="form-select"
+        id="group2Select"
+        [disabled]="!group1"
+        [ngModel]="group2"
+        (ngModelChange)="onChangeGroup2($event)"
+        name="g2"
+      >
         <option [ngValue]="null">(nessuno)</option>
         <ng-container *ngFor="let g of keys">
-        <option *ngIf="g !== group1" [ngValue]="g">{{ labels[g] }}</option>
+          <option *ngIf="g !== group1" [ngValue]="g">{{ labels[g] }}</option>
         </ng-container>
-    </select>
-    </label>
+      </select>
+    </div>
 
-    <button type="button" (click)="clear()">Reset</button>
+    <div class="col-12 col-sm-auto"  *ngIf="group1">
+      <button type="button" class="btn btn-warning" (click)="clear()">Reset</button>
+    </div>
 </form>

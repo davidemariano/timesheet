@@ -20,6 +20,10 @@ export class GroupFiltersComponent {
   labels: Record<GroupKey, string> = { project: 'Project', employee: 'Employee', date: 'Date' };
 
   onChangeGroup1(v: GroupKey | null) {
+    if (v == null) {
+      this.onChangeGroup2(null);
+      this.group2Change.emit(null);
+    }
     this.group1Change.emit(v);
     // se il secondo è uguale al primo, azzero
     if (v && this.group2 === v) this.group2Change.emit(null);
