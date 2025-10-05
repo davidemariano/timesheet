@@ -2,11 +2,16 @@ import { GroupKey, TimesheetEntry, Row, TableVM } from '../model/model';
 
 // Formatta la data in modo DETERMINISTICO alla giornata locale (Europe/Rome)
 function toRomeDay(iso: string): string {
-  // "en-CA" => YYYY-MM-DD, timeZone garantisce la corretta giornata locale
-  return new Intl.DateTimeFormat('en-CA', {
+  const parts = new Intl.DateTimeFormat('en', {
     timeZone: 'Europe/Rome',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date(iso));
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).formatToParts(new Date(iso));
+
+  const lookup = Object.fromEntries(parts.map(({ type, value }) => [type, value])) as Record<string, string>;
+  const { day = '', month = '', year = '' } = lookup;
+  return `${day} ${month} ${year}`.trim();
 }
 
 const accessors: Record<GroupKey, (e: TimesheetEntry) => { key: string; label: string }> = {

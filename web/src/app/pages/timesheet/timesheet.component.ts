@@ -25,7 +25,7 @@ export class TimesheetPageComponent {
   group2$ = this.group2Subject.asObservable();
 
   readonly vm$ = combineLatest([
-    this.timesheetService.load().pipe(startWith([] as TimesheetEntry[])),
+    this.timesheetService.getActivities().pipe(startWith([] as TimesheetEntry[])),
     this.group1$, this.group2$,
   ]).pipe(
     map(([data, g1, g2]) => {

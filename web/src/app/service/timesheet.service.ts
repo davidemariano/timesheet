@@ -9,7 +9,7 @@ export class TimesheetService {
   constructor(private http: HttpClient) {}
 
   
-  load(): Observable<TimesheetEntry[]> {
+  getActivities(): Observable<TimesheetEntry[]> {
     return this.http.get<TimesheetEntry[]>(`${environment.apiBaseUrl}/api/activities`).pipe(shareReplay(1));
   }
 }
