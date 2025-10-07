@@ -54,28 +54,18 @@ ME_CONFIG_MONGODB_URL=mongodb://root:devpass@mongo:27017/?authSource=admin
 
 ## 🚀 Avvio dell’applicativo con Docker
 
-### 1. Avvio completo dell’ambiente
+### 1. Avvio completo dell’ambiente in modalità dev
 
 Per avviare **tutti i servizi** (backend, frontend, MongoDB e Mongo Express):
 
 ```bash
-docker compose --profile dev
+docker compose --profile dev up
 ```
 
 Oppure, per eseguirli in background:
 
 ```bash
 docker compose --profile dev up -d
-```
-
----
-
-### 2. Avvio in modalità sviluppo
-
-Volendo puoi eseguire la build in un profilo dedicato allo sviluppo:
-
-```bash
-docker compose --profile dev up
 ```
 
 ---
