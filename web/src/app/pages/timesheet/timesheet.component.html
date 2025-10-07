@@ -16,7 +16,12 @@
   <ng-container *ngIf="vm$ | async as vm; else loading">
     <div class="card">
       <div class="card-body p-0">
-        <ui-table [columns]="vm.columns" [headers]="vm.headers" [rows]="vm.rows" />
+        <ng-container *ngIf="vm.rows.length > 0; else emptyState">
+          <ui-table [columns]="vm.columns" [headers]="vm.headers" [rows]="vm.rows" />
+        </ng-container>
+        <ng-template #emptyState>
+          <div class="p-4 text-center text-muted">Non vi sono dati nel DB</div>
+        </ng-template>
       </div>
     </div>
   </ng-container>

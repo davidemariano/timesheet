@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { BehaviorSubject, Observable, Subscription, combineLatest, map, startWith, tap } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, combineLatest, map, tap } from 'rxjs';
 import { GroupKey, NamedEntity, TableVM, TimesheetEntry } from '../../model/model';
 import { CreateActivityRequest, TimesheetService } from '../../service/timesheet.service';
 import { UiTableComponent } from '../../components/ui-table/ui-table.component';
@@ -49,7 +49,7 @@ export class TimesheetPageComponent implements OnDestroy {
   );
 
   readonly vm$ = combineLatest([
-    this.activities$.pipe(startWith([] as TimesheetEntry[])),
+    this.activities$,
     this.group1$, this.group2$,
   ]).pipe(
     map(([data, g1, g2]) => {
@@ -269,44 +269,150 @@ export class TimesheetPageComponent implements OnDestroy {
     return text.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
   }
 
-  // Costruisce un documento PDF monofoglio con testo a larghezza fissa.
+  // Costruisce un PDF tabellare multi-pagina ispirato allo stile Bootstrap della tabella.
   private buildPdf(vm: TableVM): string {
-    const headers = vm.columns.map(col => vm.headers[col] ?? col).join(' | ');
-    const rows = vm.rows.map(row => vm.columns.map(col => this.formatValue(row[col])).join(' | '));
-    const lines = [headers, ...rows];
-    if (lines.length === 1) {
-      lines.push('Nessun dato disponibile');
+    const pageWidth = 595; // A4 portrait
+    const pageHeight = 842;
+    const margin = 40;
+    const headerHeight = 28;
+    const rowHeight = 22;
+    const paddingX = 10;
+    const fontSize = 12;
+    const tableWidth = pageWidth - margin * 2;
+
+    const headers = vm.columns.map(col => vm.headers[col] ?? col);
+    const rows = vm.rows.map(row => vm.columns.map(col => this.formatValue(row[col])));
+
+    const columnWidths = this.computeColumnWidths(headers, rows, tableWidth, fontSize);
+    const tableLeft = margin;
+
+    const pageContents: string[] = [];
+    const encoder = new TextEncoder();
+
+    let content = '';
+    let currentY = pageHeight - margin;
+
+    const drawRow = (cells: string[], options: { header?: boolean; zebra?: boolean }) => {
+      const isHeader = !!options.header;
+      const height = isHeader ? headerHeight : rowHeight;
+      currentY -= height;
+      const y = currentY;
+
+      if (isHeader) {
+        content += `q 0.92 g ${tableLeft.toFixed(2)} ${y.toFixed(2)} ${tableWidth.toFixed(2)} ${height.toFixed(2)} re f Q\n`;
+      } else if (options.zebra) {
+        content += `q 0.97 g ${tableLeft.toFixed(2)} ${y.toFixed(2)} ${tableWidth.toFixed(2)} ${height.toFixed(2)} re f Q\n`;
+      }
+
+      content += `q 0.65 G 0.5 w ${tableLeft.toFixed(2)} ${y.toFixed(2)} ${tableWidth.toFixed(2)} ${height.toFixed(2)} re S Q\n`;
+
+      let verticalCursor = tableLeft;
+      for (let i = 0; i < columnWidths.length - 1; i++) {
+        verticalCursor += columnWidths[i];
+        content += `q 0.85 G 0.5 w ${verticalCursor.toFixed(2)} ${y.toFixed(2)} m ${verticalCursor.toFixed(2)} ${(y + height).toFixed(2)} l S Q\n`;
+      }
+
+      // Posiziona il testo leggermente sotto il centro verticale della cella.
+      const textBaseline = y + height / 5 + fontSize * 0.35;
+      let columnStart = tableLeft;
+      for (let i = 0; i < cells.length; i++) {
+        const colWidth = columnWidths[i];
+        const textX = columnStart + paddingX;
+        const truncated = this.truncateForWidth(cells[i], colWidth - paddingX * 2, fontSize);
+        const escaped = this.escapePdf(truncated);
+        content += `BT /F1 ${fontSize} Tf 1 0 0 1 ${textX.toFixed(2)} ${textBaseline.toFixed(2)} Tm (${escaped}) Tj ET\n`;
+        columnStart += colWidth;
+      }
+    };
+
+    const startPage = () => {
+      content = '';
+      currentY = pageHeight - margin;
+    };
+
+    const finishPage = () => {
+      if (content.trim().length > 0) {
+        pageContents.push(content);
+      }
+    };
+
+    const ensureSpace = (height: number) => {
+      if (currentY - height < margin) {
+        finishPage();
+        startPage();
+        drawRow(headers, { header: true });
+      }
+    };
+
+    startPage();
+    drawRow(headers, { header: true });
+
+    rows.forEach((cells, index) => {
+      ensureSpace(rowHeight);
+      drawRow(cells, { zebra: index % 2 === 1 });
+    });
+
+    finishPage();
+
+    if (pageContents.length === 0) {
+      pageContents.push('BT /F1 12 Tf 1 0 0 1 50 800 Tm (Nessun dato disponibile) Tj ET\n');
     }
 
-    const escapedLines = lines.map(line => this.escapePdf(line));
-    let textStream = 'BT\n/F1 12 Tf\n14 TL\n1 0 0 1 40 800 Tm\n';
-    escapedLines.forEach((line, index) => {
-      if (index === 0) {
-        textStream += `(${line}) Tj\n`;
-      } else {
-        textStream += `T* (${line}) Tj\n`;
-      }
-    });
-    textStream += 'ET';
+    const objects: string[] = [];
+    const pageCount = pageContents.length;
+    const pageObjNumbers: number[] = [];
+    const contentObjNumbers: number[] = [];
 
-    const encoder = new TextEncoder();
-    const streamBytes = encoder.encode(textStream);
-    const streamLength = streamBytes.length;
+    let nextObj = 3;
+    for (let i = 0; i < pageCount; i++) {
+      pageObjNumbers.push(nextObj++);
+    }
+    for (let i = 0; i < pageCount; i++) {
+      contentObjNumbers.push(nextObj++);
+    }
+    const fontObjNumber = nextObj++;
 
-    const objects = [
-      '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n',
-      '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n',
-      '3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\nendobj\n',
-      `4 0 obj\n<< /Length ${streamLength} >>\nstream\n${textStream}\nendstream\nendobj\n`,
-      '5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n',
-    ];
+    objects.push('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
 
-    let pdf = '%PDF-1.3\n';
+    const kids = pageObjNumbers.map(n => `${n} 0 R`).join(' ');
+    objects.push(`2 0 obj\n<< /Type /Pages /Kids [${kids}] /Count ${pageCount} >>\nendobj\n`);
+
+    for (let i = 0; i < pageCount; i++) {
+      const pageObj = pageObjNumbers[i];
+      const contentObj = contentObjNumbers[i];
+      objects.push(
+`${pageObj} 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontObjNumber} 0 R >> >> /Contents ${contentObj} 0 R >>
+endobj
+`);
+    }
+
+    for (let i = 0; i < pageCount; i++) {
+      const contentObj = contentObjNumbers[i];
+      const body = pageContents[i];
+      const contentBytes = encoder.encode(body);
+      objects.push(
+`${contentObj} 0 obj
+<< /Length ${contentBytes.length} >>
+stream
+${body}
+endstream
+endobj
+`);
+    }
+
+    objects.push(
+`${fontObjNumber} 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+`);
+
+    let pdf = '%PDF-1.4\n';
     const offsets: number[] = [0];
-    objects.forEach(obj => {
+    for (const obj of objects) {
       offsets.push(pdf.length);
       pdf += obj;
-    });
+    }
 
     const xrefPosition = pdf.length;
     pdf += `xref\n0 ${objects.length + 1}\n`;
@@ -321,6 +427,51 @@ export class TimesheetPageComponent implements OnDestroy {
     pdf += '%%EOF';
 
     return pdf;
+  }
+
+  // Stima approssimativa della larghezza di un testo in funzione del font.
+  private estimateTextWidth(text: string, fontSize = 12): number {
+    return text.length * (fontSize * 0.5);
+  }
+
+  // Tronca il testo aggiungendo "..." quando eccede lo spazio disponibile della colonna.
+  private truncateForWidth(text: string, maxWidth: number, fontSize = 12): string {
+    if (maxWidth <= 0) return '';
+    if (this.estimateTextWidth(text, fontSize) <= maxWidth) return text;
+    const ellipsis = '...';
+    const ellipsisWidth = this.estimateTextWidth(ellipsis, fontSize);
+    if (ellipsisWidth >= maxWidth) {
+      return ellipsis;
+    }
+    let result = '';
+    for (const char of text) {
+      if (this.estimateTextWidth(result + char, fontSize) > maxWidth - ellipsisWidth) break;
+      result += char;
+    }
+    return result ? result + ellipsis : ellipsis;
+  }
+
+  // Calcola le larghezze delle colonne in modo proporzionale alla lunghezza dei contenuti.
+  private computeColumnWidths(headers: string[], rows: string[][], availableWidth: number, fontSize = 12): number[] {
+    const columnCount = Math.max(headers.length, 1);
+    const minWidth = Math.min(120, availableWidth / columnCount);
+    const weights: number[] = headers.map((header, idx) => {
+      const texts = [header, ...rows.map(row => row[idx] ?? '')];
+      const widths = texts.map(text => this.estimateTextWidth(text, fontSize));
+      return Math.max(...widths, fontSize * 4);
+    });
+    const weightSum = weights.reduce((acc, w) => acc + w, 0) || 1;
+    let widths = weights.map(w => (availableWidth * w) / weightSum);
+    widths = widths.map(w => Math.max(w, minWidth));
+    let total = widths.reduce((acc, w) => acc + w, 0);
+    if (total > availableWidth) {
+      const scale = availableWidth / total;
+      widths = widths.map(w => w * scale);
+      total = widths.reduce((acc, w) => acc + w, 0);
+    }
+    const diff = availableWidth - total;
+    widths[widths.length - 1] += diff;
+    return widths;
   }
 
   // Restituisce un nome file con timestamp ISO safe per i filesystem.

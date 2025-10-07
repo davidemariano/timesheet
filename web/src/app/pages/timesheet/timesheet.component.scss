@@ -2,8 +2,8 @@
 .add-entry-btn {
   position: fixed;
   bottom: 1.5rem;
-  right: 3rem;
-  z-index: 1030;
+  right: 7rem;
+  z-index: 1000;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -53,7 +53,7 @@
 }
 
 .add-entry-modal {
-  z-index: 1065;
+  z-index: 1050;
 }
 
 .add-entry-modal .modal-content {

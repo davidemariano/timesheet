@@ -7,4 +7,6 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   styleUrl: './page-header.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PageHeaderComponent {}
+export class PageHeaderComponent {
+  pageTitle = 'Timesheet - Aggregazione ore';
+}
