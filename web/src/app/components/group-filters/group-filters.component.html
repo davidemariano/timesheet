@@ -31,7 +31,17 @@
       </select>
     </div>
 
-    <div class="col-12 col-sm-auto"  *ngIf="group1">
-      <button type="button" class="btn btn-warning" (click)="clear()">Reset</button>
+    <div class="col-12 col-lg-auto d-flex gap-2">
+      <div class="btn-group" role="group" aria-label="Esporta tabella">
+        <button type="button" class="btn btn-outline-secondary" (click)="triggerCsv()">
+          Esporta CSV
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="triggerPdf()">
+          Esporta PDF
+        </button>
+      </div>
+      <button type="button" class="btn btn-warning" (click)="clear()" *ngIf="group1">
+        Reset
+      </button>
     </div>
 </form>

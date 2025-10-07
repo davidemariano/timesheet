@@ -7,6 +7,8 @@
         [group2]="group2$ | async"
         (group1Change)="setGroup1($event)"
         (group2Change)="setGroup2($event)"
+        (exportCsv)="onExportCsv()"
+        (exportPdf)="onExportPdf()"
       />
     </div>
   </div>
