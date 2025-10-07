@@ -27,6 +27,29 @@ Assicurati di avere installato:
 - [Docker Compose](https://docs.docker.com/compose/)
 - (Facoltativo) [MongoDB Compass](https://www.mongodb.com/products/compass) per ispezionare il database
 
+## 🧾 Configurazione del file .env
+
+All’interno della root del progetto crea un file denominato `.env`, che conterrà le variabili d’ambiente utilizzate da Docker Compose per configurare i container. Il contenuto consigliato è il seguente:
+
+```
+# Mongo
+MONGO_INITDB_ROOT_USERNAME=root
+MONGO_INITDB_ROOT_PASSWORD=devpass
+MONGO_DB=timesheet
+MONGO_URI=mongodb://root:devpass@mongo:27017/timesheet?authSource=admin
+
+# API
+API_PORT=3000
+NODE_ENV=development
+
+# mongo-express
+ME_CONFIG_BASICAUTH_USERNAME=admin
+ME_CONFIG_BASICAUTH_PASSWORD=adminpass
+ME_CONFIG_MONGODB_URL=mongodb://root:devpass@mongo:27017/?authSource=admin
+```
+
+> 💡 **Nota**: assicurati che i nomi delle variabili coincidano con quelli utilizzati all’interno del file docker-compose.yml. Queste verranno automaticamente caricate al momento dell’esecuzione dei container.
+
 ---
 
 ## 🚀 Avvio dell’applicativo con Docker
@@ -36,13 +59,13 @@ Assicurati di avere installato:
 Per avviare **tutti i servizi** (backend, frontend, MongoDB e Mongo Express):
 
 ```bash
-docker compose up
+docker compose --profile dev
 ```
 
 Oppure, per eseguirli in background:
 
 ```bash
-docker compose up -d
+docker compose --profile dev up -d
 ```
 
 ---
@@ -57,7 +80,7 @@ docker compose --profile dev up
 
 ---
 
-### 3. Arresto dell’ambiente
+### 2. Arresto dell’ambiente
 
 Per fermare tutti i container:
 
@@ -73,7 +96,7 @@ docker compose down -v
 
 ---
 
-### 4. Pulizia risorse inutilizzate
+### 3. Pulizia risorse inutilizzate
 
 Per rimuovere container, immagini e volumi non più utilizzati:
 
@@ -219,7 +242,7 @@ mongosh "mongodb://localhost:27017/timesheet" mongo/init.js
 
 ---
 
-## 🔟 Licenza
+## Licenza
 
 Progetto a scopo dimostrativo.
 Open source - Free use for any purpose
