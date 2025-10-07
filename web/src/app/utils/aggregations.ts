@@ -1,6 +1,6 @@
 import { GroupKey, TimesheetEntry, Row, TableVM } from '../model/model';
 
-// Formatta la data in modo DETERMINISTICO alla giornata locale (Europe/Rome)
+// Formatta la data in modo deterministico rispetto al fuso Europe/Rome
 function toRomeDay(iso: string): string {
   const parts = new Intl.DateTimeFormat('en', {
     timeZone: 'Europe/Rome',
@@ -14,6 +14,7 @@ function toRomeDay(iso: string): string {
   return `${day} ${month} ${year}`.trim();
 }
 
+// Traduttori di ogni dimensione di grouping in chiave stabile + etichetta leggibile
 const accessors: Record<GroupKey, (e: TimesheetEntry) => { key: string; label: string }> = {
   project: (e) => ({ key: `project:${e.project.id}`, label: e.project.name }),
   employee: (e) => ({ key: `employee:${e.employee.id}`, label: e.employee.name }),
@@ -27,6 +28,7 @@ export function buildViewModel(
   data: TimesheetEntry[],
   groupOrder: GroupKey[] // lunghezza 0, 1 o 2
 ): TableVM {
+  // Header di tabella condivisi da qualunque view model
   const headers: Record<string, string> = {
     project: 'Project',
     employee: 'Employee',
@@ -54,12 +56,14 @@ export function buildViewModel(
     const labels: string[] = [];
     const keys: string[] = [];
 
+    // Costruisce progressivamente chiave aggregata e label per ogni dimensione
     for (const g of groupOrder) {
       const a = accessors[g](e);
       labels.push(a.label);
       keys.push(a.key);
     }
 
+    // Chiave composta garantisce unicità del bucket (progetto|dipendente|data ...)
     const composite = keys.join('|');
     const curr = buckets.get(composite) ?? { labels, hours: 0 };
     curr.hours += e.hours;
@@ -70,10 +74,12 @@ export function buildViewModel(
   const rows: Row[] = Array.from(buckets.values())
     .map(({ labels, hours }) => {
       const r: any = { hours };
+      // Riassocia ogni label alla rispettiva colonna secondo l'ordine di grouping
       groupOrder.forEach((g, i) => { r[g] = labels[i]; });
       return r as Row;
     })
     .sort((a, b) => {
+      // Ordinamento stabile: confronto lessicografico per ciascuna colonna
       for (const g of groupOrder) {
         const av = String(a[g] ?? '');
         const bv = String(b[g] ?? '');

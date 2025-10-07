@@ -8,7 +8,7 @@ import { environment } from '../../environments/environment';
 export class TimesheetService {
   constructor(private http: HttpClient) {}
 
-  
+  // GET delle attività dal backend con caching della risposta e condivisione tra subscriptions
   getActivities(): Observable<TimesheetEntry[]> {
     return this.http.get<TimesheetEntry[]>(`${environment.apiBaseUrl}/api/activities`).pipe(shareReplay(1));
   }
