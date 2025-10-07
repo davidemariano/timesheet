@@ -17,21 +17,27 @@ import { buildViewModel } from '../../utils/aggregations';
   styleUrl: './timesheet.component.scss',
 })
 export class TimesheetPageComponent implements OnDestroy {
+  // Servizi principali per accedere ai dati e costruire reactive form.
   private timesheetService = inject(TimesheetService);
   private fb = inject(FormBuilder);
 
+  // Raccolta centralizzata delle subscription da chiudere in ngOnDestroy.
   private subscriptions = new Subscription();
+  // Indici locali per mappare velocemente id → NamedEntity.
   private projectIndex = new Map<number, NamedEntity>();
   private employeeIndex = new Map<number, NamedEntity>();
 
+  // Signalizza i filtri di raggruppamento scelti dal componente figlio.
   private group1Subject = new BehaviorSubject<GroupKey | null>(null);
   private group2Subject = new BehaviorSubject<GroupKey | null>(null);
 
   group1$ = this.group1Subject.asObservable();
   group2$ = this.group2Subject.asObservable();
 
+  // Stream principale delle attività provenienti dal servizio.
   readonly activities$ = this.timesheetService.getActivities();
 
+  // Liste di progetti/dipendenti uniche, pronte per popolare le select del modale.
   readonly projects$: Observable<NamedEntity[]> = this.activities$.pipe(
     map(entries => this.distinctNamedEntities(entries.map(e => e.project))),
     tap(list => this.projectIndex = new Map(list.map(item => [item.id, item])))
@@ -53,8 +59,10 @@ export class TimesheetPageComponent implements OnDestroy {
     tap(vm => this.latestVm = vm)
   );
 
+  // Ultimo view model emesso, usato da CSV/PDF.
   private latestVm: TableVM | null = null;
 
+  // Form reattivo del modale di inserimento attività.
   readonly addForm = this.fb.group({
     projectChoice: ['', Validators.required],
     projectName: [''],
@@ -69,11 +77,13 @@ export class TimesheetPageComponent implements OnDestroy {
   submitError: string | null = null;
 
   constructor() {
+    // Ricostruisce i validator del campo progetto quando cambia la select.
     this.subscriptions.add(
       this.addForm.get('projectChoice')!.valueChanges.subscribe(choice => {
         this.updateProjectNameValidators(choice);
       })
     );
+    // Idem per il campo dipendente.
     this.subscriptions.add(
       this.addForm.get('employeeChoice')!.valueChanges.subscribe(choice => {
         this.updateEmployeeNameValidators(choice);
@@ -128,6 +138,7 @@ export class TimesheetPageComponent implements OnDestroy {
       return;
     }
 
+    // Normalizza la coppia progetto/dipendente recuperando il nome definitivo.
     const raw = this.addForm.value;
     const projectName = this.resolveEntityName(raw.projectChoice, raw.projectName ?? '', this.projectIndex);
     const employeeName = this.resolveEntityName(raw.employeeChoice, raw.employeeName ?? '', this.employeeIndex);
@@ -171,12 +182,14 @@ export class TimesheetPageComponent implements OnDestroy {
 
   trackById(_: number, item: NamedEntity) { return item.id; }
 
+  // Triggera il download del CSV relativo allo stato attuale della tabella.
   onExportCsv() {
     if (!this.latestVm) return;
     const csv = this.buildCsv(this.latestVm);
     this.downloadFile(csv, this.buildFilename('timesheet', 'csv'), 'text/csv;charset=utf-8;');
   }
 
+  // Genera un PDF testuale minimale dell'attuale view model.
   onExportPdf() {
     if (!this.latestVm) return;
     const pdf = this.buildPdf(this.latestVm);
@@ -191,6 +204,7 @@ export class TimesheetPageComponent implements OnDestroy {
     return Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name, 'it'));
   }
 
+  // Aggiunge/rimuove i vincoli quando si sceglie di creare un nuovo progetto.
   private updateProjectNameValidators(choice: string | null) {
     const ctrl = this.addForm.get('projectName')!;
     if (choice === '__new') {
@@ -202,6 +216,7 @@ export class TimesheetPageComponent implements OnDestroy {
     ctrl.updateValueAndValidity({ emitEvent: false });
   }
 
+  // Replica la stessa logica per i dipendenti.
   private updateEmployeeNameValidators(choice: string | null) {
     const ctrl = this.addForm.get('employeeName')!;
     if (choice === '__new') {
@@ -223,6 +238,7 @@ export class TimesheetPageComponent implements OnDestroy {
     return entity ? entity.name : null;
   }
 
+  // Converte qualsiasi valore di cella in stringa pronta per export/render.
   private formatValue(value: unknown): string {
     if (value == null) return '';
     if (typeof value === 'object') {
@@ -233,6 +249,7 @@ export class TimesheetPageComponent implements OnDestroy {
     return String(value);
   }
 
+  // Escaping semplice per valori CSV con punti e virgola, virgolette o newline.
   private escapeCsv(value: string): string {
     if (/[";\n]/.test(value)) {
       return `"${value.replace(/"/g, '""')}"`;
@@ -247,10 +264,12 @@ export class TimesheetPageComponent implements OnDestroy {
     return lines.join('\n');
   }
 
+  // Escaping minimo richiesto dal formato PDF per i text stream.
   private escapePdf(text: string): string {
     return text.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
   }
 
+  // Costruisce un documento PDF monofoglio con testo a larghezza fissa.
   private buildPdf(vm: TableVM): string {
     const headers = vm.columns.map(col => vm.headers[col] ?? col).join(' | ');
     const rows = vm.rows.map(row => vm.columns.map(col => this.formatValue(row[col])).join(' | '));
@@ -304,11 +323,13 @@ export class TimesheetPageComponent implements OnDestroy {
     return pdf;
   }
 
+  // Restituisce un nome file con timestamp ISO safe per i filesystem.
   private buildFilename(base: string, ext: string): string {
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     return `${base}-${stamp}.${ext}`;
   }
 
+  // Utilizza un blob temporaneo per avviare il download e poi libera l'URL.
   private downloadFile(content: string, filename: string, mime: string) {
     const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);

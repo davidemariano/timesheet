@@ -13,10 +13,13 @@ import { GroupKey } from '../../model/model';
   styleUrls: ['./group-filters.component.scss'],
 })
 export class GroupFiltersComponent implements OnInit, OnDestroy {
+  // Router/ActivatedRoute ci servono per leggere e aggiornare i query param condivisi.
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  // destroy$ usato per chiudere le sottoscrizioni all'unsubscribe del componente.
   private destroy$ = new Subject<void>();
 
+  // Manteniamo i valori ricevuti dal genitore e ne aggiorniamo una copia interna.
   private _group1: GroupKey | null = null;
   @Input() set group1(value: GroupKey | null) {
     this._group1 = value;
@@ -43,6 +46,7 @@ export class GroupFiltersComponent implements OnInit, OnDestroy {
   private currentGroup1: GroupKey | null = null;
   private currentGroup2: GroupKey | null = null;
 
+  // All'avvio leggiamo eventuali filtri dalla URL e li propaghiamo al genitore.
   ngOnInit(): void {
     this.route.queryParamMap
       .pipe(takeUntil(this.destroy$))
@@ -69,12 +73,14 @@ export class GroupFiltersComponent implements OnInit, OnDestroy {
         const desiredGroup1 = normalizedGroup1 ?? null;
         const desiredGroup2 = normalizedGroup1 && normalizedGroup2 ? normalizedGroup2 : null;
 
+        // Se i parametri non sono coerenti, li riscriviamo per mantenere ordine e validità.
         if ((rawGroup1 ?? null) !== desiredGroup1 || (rawGroup2 ?? null) !== desiredGroup2) {
           this.updateQueryParams(normalizedGroup1, normalizedGroup2);
         }
       });
   }
 
+  // Cleanup delle sottoscrizioni quando il componente viene distrutto.
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
@@ -142,11 +148,13 @@ export class GroupFiltersComponent implements OnInit, OnDestroy {
   triggerCsv() { this.exportCsv.emit(); }
   triggerPdf() { this.exportPdf.emit(); }
 
+  // Converte stringhe dei query param in GroupKey validi, scartando i valori ignoti.
   private parseGroupKey(value: string | null): GroupKey | null {
     if (!value) return null;
     return this.keys.includes(value as GroupKey) ? (value as GroupKey) : null;
   }
 
+  // Aggiorna i query param mantenendo l'ordine (group1 -> group2) e rimuovendo gli undefined.
   private updateQueryParams(group1: GroupKey | null, group2: GroupKey | null) {
     const params = { ...this.route.snapshot.queryParams } as Record<string, any>;
 
