@@ -1,0 +1,67 @@
+
+.add-entry-btn {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 3rem;
+  z-index: 1030;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  min-width: 3.5rem;
+  // border-radius: 999px;
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  transition: padding 0.4s ease, box-shadow 0.3s ease;
+}
+
+.add-entry-btn .add-entry-label {
+  max-width: 0;
+  opacity: 0;
+  margin-right: 0;
+  white-space: nowrap;
+  transition: max-width 0.4s ease, opacity 0.4s ease, margin-right 0.4s ease;
+}
+
+.add-entry-btn .add-entry-symbol {
+  font-weight: 600;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .add-entry-btn:hover,
+  .add-entry-btn:focus-visible {
+    padding: 0.75rem 1.5rem;
+  }
+
+  .add-entry-btn:hover .add-entry-label,
+  .add-entry-btn:focus-visible .add-entry-label {
+    max-width: 6rem;
+    opacity: 1;
+    margin-right: 0.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  /*.add-entry-btn {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+  }*/
+  .add-entry-btn .add-entry-label {
+    display: none;
+  }
+}
+
+.add-entry-modal {
+  z-index: 1065;
+}
+
+.add-entry-modal .modal-content {
+  border-radius: 1rem;
+  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.25);
+}
+
+.add-entry-modal .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}

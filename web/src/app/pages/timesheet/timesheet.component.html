@@ -1,9 +1,4 @@
-<header class="page-header mb-2 container-fluid p-3 bg-light border-bottom">
-  <nav class="navbar navbar-light">
-    <span class="navbar-brand mb-0 h1 text-dark">Timesheet</span>
-  </nav>
-</header>
-<section class="page container py-4">
+<section class="page container py-4 mb-5">
   <div class="card mb-4">
     <div class="card-body">
       <group-filters
@@ -31,3 +26,126 @@
     </div>
   </ng-template>
 </section>
+
+<button
+  type="button"
+  class="btn btn-primary add-entry-btn"
+  (click)="openAddModal()"
+  aria-label="Aggiungi attività"
+>
+  <span class="add-entry-label">Aggiungi</span>
+  <span class="add-entry-symbol">+</span>
+</button>
+
+<ng-container *ngIf="isAddModalOpen">
+  <div class="modal-backdrop fade show"></div>
+  <div class="modal fade show d-block add-entry-modal" tabindex="-1" role="dialog" aria-modal="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+      <form class="modal-content" [formGroup]="addForm" (ngSubmit)="submitNewEntry()">
+        <div class="modal-header">
+          <h5 class="modal-title">Registra nuova attività</h5>
+          <button type="button" class="btn-close" aria-label="Chiudi" (click)="closeAddModal()" [disabled]="isSubmitting"></button>
+        </div>
+        <div class="modal-body">
+          <div *ngIf="submitError" class="alert alert-danger" role="alert">
+            {{ submitError }}
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="projectChoice">Progetto</label>
+              <select
+                id="projectChoice"
+                class="form-select"
+                formControlName="projectChoice"
+                [ngClass]="{ 'is-invalid': hasError('projectChoice') }"
+              >
+                <option value="" disabled>Seleziona un progetto</option>
+                <option *ngFor="let project of (projects$ | async) ?? []; trackBy: trackById" [value]="project.id">
+                  {{ project.name }}
+                </option>
+                <option value="__new">Nuovo progetto…</option>
+              </select>
+              <div class="invalid-feedback">Seleziona un progetto o scegli di crearne uno nuovo.</div>
+            </div>
+            <div class="col-12 col-md-6" *ngIf="isProjectNew">
+              <label class="form-label" for="projectName">Nuovo progetto</label>
+              <input
+                id="projectName"
+                type="text"
+                class="form-control"
+                formControlName="projectName"
+                placeholder="Nome progetto"
+                [ngClass]="{ 'is-invalid': hasError('projectName') }"
+              />
+              <div class="invalid-feedback">Inserisci il nome del nuovo progetto.</div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="employeeChoice">Risorsa</label>
+              <select
+                id="employeeChoice"
+                class="form-select"
+                formControlName="employeeChoice"
+                [ngClass]="{ 'is-invalid': hasError('employeeChoice') }"
+              >
+                <option value="" disabled>Seleziona una risorsa</option>
+                <option *ngFor="let employee of (employees$ | async) ?? []; trackBy: trackById" [value]="employee.id">
+                  {{ employee.name }}
+                </option>
+                <option value="__new">Nuovo dipendente…</option>
+              </select>
+              <div class="invalid-feedback">Seleziona una risorsa o registrane una nuova.</div>
+            </div>
+            <div class="col-12 col-md-6" *ngIf="isEmployeeNew">
+              <label class="form-label" for="employeeName">Nuova risorsa</label>
+              <input
+                id="employeeName"
+                type="text"
+                class="form-control"
+                formControlName="employeeName"
+                placeholder="Nome e cognome"
+                [ngClass]="{ 'is-invalid': hasError('employeeName') }"
+              />
+              <div class="invalid-feedback">Inserisci il nome della nuova risorsa.</div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="date">Data</label>
+              <input
+                id="date"
+                type="date"
+                class="form-control"
+                formControlName="date"
+                [ngClass]="{ 'is-invalid': hasError('date') }"
+              />
+              <div class="invalid-feedback">Seleziona la data dell'attività.</div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="hours">Ore</label>
+              <input
+                id="hours"
+                type="number"
+                min="0"
+                step="0.25"
+                class="form-control"
+                formControlName="hours"
+                [ngClass]="{ 'is-invalid': hasError('hours') }"
+              />
+              <div class="invalid-feedback">Inserisci le ore lavorate (es. 1.5).</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeAddModal()" [disabled]="isSubmitting">
+            Annulla
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="addForm.invalid || isSubmitting">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Registra
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</ng-container>
